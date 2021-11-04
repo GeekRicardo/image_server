@@ -43,18 +43,21 @@ def uploads():
         token = request.headers.get("PToken")
         if not token or token not in TOKEN_LIST:
             return "-1"
+
         # 获取post过来的文件名称，从name=file参数中获取
         file = request.files["file"]
         if file and allowed_file(file.filename):
             print(file.filename)
             # secure_filename方法会去掉文件名中的中文
-            # file_md5 = hashlib.md5(
-            #     secure_filename(file.filename.encode("utf-8"))
-            # ).hexdigest()
-            file_md5 = str(uuid.uuid4())
+            image_bytes = file.read()
+            md5 = hashlib.md5()
+            md5.update(image_bytes[:8096])
+            file_md5 = md5.hexdigest()
+            # file_md5 = str(uuid.uuid4())
             file_name = file_md5 + "." + file.filename.rsplit(".", 1)[-1]
             # 保存图片
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], file_name))
+            with open(os.path.join(app.config["UPLOAD_FOLDER"], file_name), "wb") as f:
+                f.write(image_bytes)
             return file_name
         else:
             return "-1"
@@ -70,6 +73,8 @@ def get_frame(imageId):
         "rb",
     ) as f:
         print(imageId)
+        # if not len(imageId) > 35:
+        #     return Response(status=401)
         image = f.read()
         filetype = "png" if "png" == imageId.rsplit(".")[-1] else "jpeg"
         resp = Response(image, mimetype="image/" + filetype)
