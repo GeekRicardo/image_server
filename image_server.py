@@ -26,6 +26,9 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # 设置允许上传的文件格式
 ALLOW_EXTENSIONS = ["png", "jpg", "jpeg"]
 
+TOKEN_LIST = [
+    "1fa81717-2bbc-4dca-a00f-887ebe7c2596"
+]
 
 # 判断文件后缀是否在列表中
 def allowed_file(filename):
@@ -36,6 +39,10 @@ def allowed_file(filename):
 @app.route("/upload", methods=["POST", "GET"])
 def uploads():
     if request.method == "POST":
+        # 验证token
+        token = request.headers.get("PToken")
+        if not token or token not in TOKEN_LIST:
+            return "-1"
         # 获取post过来的文件名称，从name=file参数中获取
         file = request.files["file"]
         if file and allowed_file(file.filename):
