@@ -1,4 +1,3 @@
-base_url="http://image.sshug.cn"
 base_url="http://localhost:5800"
 
 echo "Upload Success:"
