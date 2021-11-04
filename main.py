@@ -3,9 +3,9 @@
 """
 @File    :   Untitled-1
 @Time    :   2021/11/04 18:13:24
-@Author  :   Ricardo.张葆杰
+@Author  :   Ricardo
 @Version :   1.0
-@Contact :   bj.zhang@tianrang-inc.com
+@Contact :   GeekRicardozzZ@gmail.com
 @Desc    :   图片上传服务器
 """
 
@@ -73,8 +73,6 @@ def get_frame(imageId):
         "rb",
     ) as f:
         print(imageId)
-        # if not len(imageId) > 35:
-        #     return Response(status=401)
         image = f.read()
         filetype = "png" if "png" == imageId.rsplit(".")[-1] else "jpeg"
         resp = Response(image, mimetype="image/" + filetype)
@@ -82,4 +80,4 @@ def get_frame(imageId):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5800, debug=True)
+    app.run(host="0.0.0.0", port=3001)
