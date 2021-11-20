@@ -27,7 +27,8 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 ALLOW_EXTENSIONS = ["png", "jpg", "jpeg"]
 
 TOKEN_LIST = [
-    "1fa81717-2bbc-4dca-a00f-887ebe7c2596"
+    "1fa81717-2bbc-4dca-a00f-887ebe7c2596",
+    "af3d24f83456f002d5ab9918b6317ba0"
 ]
 
 # 判断文件后缀是否在列表中
@@ -82,4 +83,4 @@ def get_frame(imageId):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5800, debug=True)
+    app.run(host="0.0.0.0", port=3001, debug=True)
