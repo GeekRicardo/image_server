@@ -1,4 +1,5 @@
 base_url="http://localhost:5800"
+base_url="http://image.sshug.cn"
 
 echo "Upload Success:"
 for i in "$@"; do
