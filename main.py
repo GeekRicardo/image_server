@@ -28,7 +28,7 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images
 # app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # 设置允许上传的文件格式
-ALLOW_EXTENSIONS = ["png", "jpg", "jpeg", "exe"]
+ALLOW_EXTENSIONS = ["png", "jpg", "jpeg", "exe", "pdf", "gif", "txt", "json"]
 ALLOW_TOKEN = False
 
 TOKEN_LIST = [
