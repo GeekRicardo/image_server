@@ -28,7 +28,7 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images
 # app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # 设置允许上传的文件格式
-ALLOW_EXTENSIONS = ["png", "jpg", "jpeg", "exe"]
+IMAGE_EXTENSIONS = ["png", "jpg", "jpeg"]
 ALLOW_TOKEN = False
 
 TOKEN_LIST = ["1fa81717-2bbc-4dca-a00f-887ebe7c2596"]
@@ -84,7 +84,21 @@ async def get_frame(imageId, response=Response()):
         response.status_code = 404
         response.content = {"code": -1, "msg": "img not found."}
         return response
-    return FileResponse("{}/{}".format(UPLOAD_FOLDER, imageId), media_type="image/jpg")
+    media_type = "application/octet-stream"
+    file_extension = imageId.rsplit(".", 1)[-1].lower()
+    if "jpg" == file_extension or "jpeg" == file_extension:
+        media_type = "image/jpeg"
+    elif "png" == file_extension:
+        media_type = "image/png"
+    elif "txt" == file_extension:
+        media_type = "text/plain"
+    elif "pdf" == file_extension:
+        media_type = "application/pdf"
+    elif "json" == file_extension:
+        media_type = "application/json"
+    elif "gif" == file_extension:
+        media_type = "image/gif"
+    return FileResponse("{}/{}".format(UPLOAD_FOLDER, imageId), media_type=meida_type)
 
 
 if __name__ == "__main__":
