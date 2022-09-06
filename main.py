@@ -56,6 +56,14 @@ def index():
     )
 
 
+@app.get("/list")
+def get_file_list():
+    file_list = get_file_list_sortby_mtime()
+    return HTMLResponse(
+        """<ul>{}</ul>""".format("".join([f"<li><a href=\"/{it}\">{it}</a></li>" for it in file_list]))
+    )
+
+
 @app.get("/uuid4")
 async def get_uuid():
     return Response(content=str(uuid.uuid4()), status_code=200)
@@ -82,14 +90,16 @@ async def uploads(file: UploadFile = File(...)):
 
 # 查看图片
 @app.get("/{imageId}")
-async def get_frame(imageId, response=Response()):
+async def get_frame(imageId:str, d:str="", response=Response()):
     if not os.path.exists(os.path.join(UPLOAD_FOLDER, imageId)):
         response.status_code = 404
         response.content = {"code": -1, "msg": "img not found."}
         return response
     media_type = "application/octet-stream"
     file_extension = imageId.rsplit(".", 1)[-1].lower()
-    if "jpg" == file_extension or "jpeg" == file_extension:
+    if d == "1":
+        media_type = "application/octet-stream"
+    elif "jpg" == file_extension or "jpeg" == file_extension:
         media_type = "image/jpeg"
     elif "png" == file_extension:
         media_type = "image/png"
@@ -102,6 +112,10 @@ async def get_frame(imageId, response=Response()):
     elif "gif" == file_extension:
         media_type = "image/gif"
     return FileResponse("{}/{}".format(UPLOAD_FOLDER, imageId), media_type=media_type)
+
+
+def get_file_list_sortby_mtime():
+    return sorted(os.listdir(UPLOAD_FOLDER), key=lambda x: os.path.getmtime(os.path.join(UPLOAD_FOLDER, x)), reverse=True)
 
 
 if __name__ == "__main__":
