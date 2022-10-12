@@ -10,6 +10,8 @@
 """
 
 # here put the import lib
+from datetime import datetime
+from genericpath import isfile
 from typing import Optional
 from fastapi import FastAPI, Header, File, UploadFile, Response
 from fastapi.responses import FileResponse, HTMLResponse
@@ -19,6 +21,8 @@ import uvicorn
 import os
 import hashlib
 import uuid
+
+from model import session, FileBase, Msg
 
 app = FastAPI()
 
@@ -33,7 +37,7 @@ ALLOW_TOKEN = False
 
 TOKEN_LIST = [
     "1fa81717-2bbc-4dca-a00f-887ebe7c2596",
-    "af3d24f83456f002d5ab9918b6317ba0"
+    "af3d24f83456f002d5ab9918b6317ba0",
 ]
 
 
@@ -60,7 +64,14 @@ def index():
 def get_file_list():
     file_list = get_file_list_sortby_mtime()
     return HTMLResponse(
-        """<ul>{}</ul>""".format("".join([f"<li><a href=\"/{it}\">{it}</a></li>" for it in file_list]))
+        """<ul>{}</ul>""".format(
+            "".join(
+                [
+                    f"<li><a href=\"/{it.md5}\">{it.filename} - <{it.ctime.strftime('%Y-%m-%d %H:%M:%S')}></a></li>"
+                    for it in file_list
+                ]
+            )
+        )
     )
 
 
@@ -77,21 +88,31 @@ async def uploads(file: UploadFile = File(...)):
         md5 = hashlib.md5()
         md5.update(image_bytes[:])
         file_md5 = md5.hexdigest()
-        # file_md5 = str(uuid.uuid4())
-        file_name = file_md5 + "." + file.filename.rsplit(".", 1)[-1]
-        save_path = os.path.join(UPLOAD_FOLDER, file_name)
+        filename = file_md5
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
         if not os.path.exists(save_path):
             with open(save_path, "wb") as f:
                 f.write(image_bytes)
-        return Response(status_code=200, content=file_name)
+            new_file = FileBase(file_md5, file.filename, datetime.now())
+            session.add(new_file)
+            session.commit()
+            return Response(status_code=200, content=filename)
+        return Response(
+            status_code=200, content={"code": 0, "message": "文件已存在", "data": file_md5}
+        )
     else:
-        return Response(status_code=405, content="")
+        return Response(status_code=405, content="not allowed file type")
 
 
-# 查看图片
 @app.get("/{imageId}")
-async def get_frame(imageId:str, d:str="", response=Response()):
-    if not os.path.exists(os.path.join(UPLOAD_FOLDER, imageId)):
+async def get_frame(imageId: str, d: str = "", response=Response()):
+    if not imageId in os.listdir(UPLOAD_FOLDER):
+        response.status_code = 404
+        response.content = {"code": -1, "msg": "file not found."}
+        return response
+    try:
+        file_ = session.query(FileBase).filter(FileBase.md5 == imageId).one()
+    except Exception as e:
         response.status_code = 404
         response.content = {"code": -1, "msg": "img not found."}
         return response
@@ -111,11 +132,43 @@ async def get_frame(imageId:str, d:str="", response=Response()):
         media_type = "application/json"
     elif "gif" == file_extension:
         media_type = "image/gif"
-    return FileResponse("{}/{}".format(UPLOAD_FOLDER, imageId), media_type=media_type)
+    return FileResponse(
+        "{}/{}".format(UPLOAD_FOLDER, imageId),
+        media_type=media_type,
+        filename=file_.filename,
+    )
+
+
+@app.get("/static/{filename}")
+def get_static_file(filename: str, d="", response=Response()):
+    if not os.path.exists(os.path.join(UPLOAD_FOLDER, filename)):
+        response.status_code = 404
+        response.content = {"code": -1, "msg": "file not found."}
+        return response
+    media_type = "application/octet-stream"
+    file_extension = filename.rsplit(".", 1)[-1].lower()
+    if d == "1":
+        media_type = "application/octet-stream"
+    elif "jpg" == file_extension or "jpeg" == file_extension:
+        media_type = "image/jpeg"
+    elif "png" == file_extension:
+        media_type = "image/png"
+    elif "txt" == file_extension:
+        media_type = "text/plain"
+    elif "pdf" == file_extension:
+        media_type = "application/pdf"
+    elif "json" == file_extension:
+        media_type = "application/json"
+    elif "gif" == file_extension:
+        media_type = "image/gif"
+    return FileResponse(
+        "{}/{}".format(UPLOAD_FOLDER, filename),
+        media_type=media_type,
+    )
 
 
 def get_file_list_sortby_mtime():
-    return sorted(os.listdir(UPLOAD_FOLDER), key=lambda x: os.path.getmtime(os.path.join(UPLOAD_FOLDER, x)), reverse=True)
+    return sorted(session.query(FileBase), key=lambda x: x.ctime, reverse=True)
 
 
 if __name__ == "__main__":

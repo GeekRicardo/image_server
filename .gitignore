@@ -1,3 +1,5 @@
 !images/favicon.ico
 images/
 __pycache__
+venv/
+.vscode/
