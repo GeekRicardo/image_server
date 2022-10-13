@@ -12,7 +12,7 @@
 # here put the import lib
 from datetime import datetime
 from genericpath import isfile
-from typing import Optional
+from typing import Optional, Union
 from fastapi import FastAPI, Header, File, UploadFile, Response
 from fastapi.responses import FileResponse, HTMLResponse
 
@@ -81,46 +81,75 @@ async def get_uuid():
 
 
 @app.post("/upload")
-async def uploads(file: UploadFile = File(...)):
+async def uploads(file: UploadFile = File(...), html: Union[str,None] = Header(None)):
 
     if file and allowed_file(file.filename):
         image_bytes = await file.read()
         md5 = hashlib.md5()
         md5.update(image_bytes[:])
         file_md5 = md5.hexdigest()
-        filename = file_md5
-        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        filename = file.filename
+        save_path = os.path.join(UPLOAD_FOLDER, file_md5)
+        content = f"<a href='{file_md5}'>{filename}</a>"
+        if html and html == "0":
+            content = file_md5
         if not os.path.exists(save_path):
             with open(save_path, "wb") as f:
                 f.write(image_bytes)
-            new_file = FileBase(file_md5, file.filename, datetime.now())
+            new_file = FileBase(file_md5, filename, datetime.now())
             session.add(new_file)
             session.commit()
-            return Response(status_code=200, content=filename)
-        return Response(
-            status_code=200, content={"code": 0, "message": "文件已存在", "data": file_md5}
-        )
+        else:
+            print("文件已存在.")
+        return Response(status_code=200, content=content)
     else:
         return Response(status_code=405, content="not allowed file type")
+
+@app.post("/static/upload")
+async def upload_static(file: UploadFile = File(...), html: Union[str,None] = Header(None)):
+
+    image_bytes = await file.read()
+    filename = file.filename
+    save_path = os.path.join(UPLOAD_FOLDER, filename)
+    content = f"<a href='{filename}'>{filename}</a>"
+    if html and html == "0":
+        content = filename
+    if not os.path.exists(save_path):
+        with open(save_path, "wb") as f:
+            f.write(image_bytes)
+        new_file = FileBase(filename, filename, datetime.now())
+        session.add(new_file)
+        session.commit()
+    else:
+        print("文件已存在.")
+    return Response(status_code=200, content=content)
 
 
 @app.get("/{imageId}")
 async def get_frame(imageId: str, d: str = "", response=Response()):
-    if not imageId in os.listdir(UPLOAD_FOLDER):
-        response.status_code = 404
-        response.content = {"code": -1, "msg": "file not found."}
-        return response
+    # if not imageId in os.listdir(UPLOAD_FOLDER):
+    #     response.status_code = 404
+    #     response.content = {"code": -1, "msg": "file not found."}
+    #     return response
     try:
         file_ = session.query(FileBase).filter(FileBase.md5 == imageId).one()
     except Exception as e:
+        print(e)
         response.status_code = 404
         response.content = {"code": -1, "msg": "img not found."}
         return response
     media_type = "application/octet-stream"
-    file_extension = imageId.rsplit(".", 1)[-1].lower()
+    filename = file_.filename
+    file_extension = filename.rsplit(".", 1)[-1].lower()
     if d == "1":
         media_type = "application/octet-stream"
-    elif "jpg" == file_extension or "jpeg" == file_extension:
+        return FileResponse(
+        "{}/{}".format(UPLOAD_FOLDER, filename),
+        media_type=media_type,
+        filename=filename,
+    )
+
+    if "jpg" == file_extension or "jpeg" == file_extension:
         media_type = "image/jpeg"
     elif "png" == file_extension:
         media_type = "image/png"
@@ -133,11 +162,9 @@ async def get_frame(imageId: str, d: str = "", response=Response()):
     elif "gif" == file_extension:
         media_type = "image/gif"
     return FileResponse(
-        "{}/{}".format(UPLOAD_FOLDER, imageId),
-        media_type=media_type,
-        filename=file_.filename,
-    )
-
+        "{}/{}".format(UPLOAD_FOLDER, file_.md5),
+        media_type=media_type
+        )
 
 @app.get("/static/{filename}")
 def get_static_file(filename: str, d="", response=Response()):
@@ -178,4 +205,6 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", 3001)),
         reload=bool(os.getenv("DEBUG", False)),
         debug=bool(os.getenv("DEBUG", False)),
+        # ssl_keyfile="/root/image_server/ssl/image.sshug.cn.key",
+        # ssl_certfile="/root/image_server/ssl/image.sshug.cn_bundle.crt"
     )

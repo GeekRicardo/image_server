@@ -7,7 +7,7 @@ from sqlalchemy import Column, String, Integer, Text, DateTime
 
 pymysql.install_as_MySQLdb()
 engine = create_engine(
-    "mysql+pymysql://root:Mysq.Ricard0.2.l@sshug.cn:3306/image_server", encoding="utf-8"
+    "mysql+pymysql://root:Mysq.Ricard0.2.l@localhost:3306/image_server", encoding="utf-8"
 )
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 session = Session()
