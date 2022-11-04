@@ -1,0 +1,14 @@
+[tool.black]
+line-length = 120
+target-version = ['py36']
+#不要标准化字符串引号或前缀
+#skip-string-normalization=false
+#不要将尾随逗号作为分割行
+#skip-magic-trailing-comma=false
+#正则表达式匹配，为空表示所有文件都会检查
+include='''.*.py$'''
+#正则表达是匹配，为空表示没有文件被排除检查
+#exclude='''.*.txt$'''
+#指定配置的路径，没有指定会在.git目录里面查找
+#config=''''''
+
