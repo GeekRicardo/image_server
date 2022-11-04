@@ -6,10 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Server</title>
     <script src="/dropzone.min.js"></script>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+      } 
+      h2 {
+        text-align: center;
+        position: relative;
+        top: 45%;
+      }
+      #upload {
+        width: 95%;
+        height: 30%;
+        background-color: #e6e6e6; 
+        border-radius: 5px;
+        position: relative;
+        left: 2.5%;
+      }
+    </style>
 </head>
 <body>
-    <form action="/upload"
-      class="dropzone"
-      id="my-awesome-dropzone"></form>
+    <!-- <form action="/upload" -->
+    <!--   class="dropzone" -->
+    <!--   id="upload-dropzone"> -->
+    <!-- </form> -->
+    <div id='upload' style='width: 95%; height: 30%;'>
+      <h2> 拖拽上传 </h2> 
+    </div>
+    <script>
+      var myDropzone = new Dropzone("div#upload", { url: "/upload"});
+    </script>
 </body>
 </html>

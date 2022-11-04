@@ -18,7 +18,7 @@ class FileBase(Base):
 
     md5 = Column(String(255), primary_key=True)
     filename = Column(String(255))
-    ctime = Column(Time)
+    ctime = Column(DateTime)
 
     def __init__(self, md5, filename, ctime=datetime.now()):
         self.md5 = md5
@@ -36,7 +36,7 @@ class Msg(Base):
 
     id = Column(Integer, primary_key=True)
     msg = Column(Text)
-    ctime = Column(Time)
+    ctime = Column(DateTime)
 
     def __init__(self, msg, id_=None, ctime=datetime.now()):
         if id_:

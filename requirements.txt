@@ -3,6 +3,7 @@ uvicorn
 sqlalchemy
 pymysql
 python-multipart
+cryptography
 
 pylint
 black

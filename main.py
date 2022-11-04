@@ -28,7 +28,8 @@ app = FastAPI()
 
 
 # 设置图片保存文件夹
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "images")
 # app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # 设置允许上传的文件格式
@@ -52,12 +53,14 @@ def allowed_file(filename):
 
 @app.get("/")
 def index():
-    return HTMLResponse(
-        """<form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" id="file">
-        <input type="submit" value="上传">
-    </form>"""
-    )
+    with open(os.path.join(BASE_DIR, "templates/index.html")) as f:
+        return HTMLResponse(f.read())
+    # return HTMLResponse(
+    #     """<form action="/upload" method="post" enctype="multipart/form-data">
+    #     <input type="file" name="file" id="file">
+    #     <input type="submit" value="上传">
+    # </form>"""
+    # )
 
 
 @app.get("/list")
@@ -97,8 +100,13 @@ async def uploads(file: UploadFile = File(...), html: Union[str,None] = Header(N
             with open(save_path, "wb") as f:
                 f.write(image_bytes)
             new_file = FileBase(file_md5, filename, datetime.now())
-            session.add(new_file)
-            session.commit()
+            try:
+                session.add(new_file)
+                session.commit()
+            except Exception as e:
+                print(e)
+                session.rollback()
+                return Response(status_code=500, content="database error")
         else:
             print("文件已存在.")
         return Response(status_code=200, content=content)
@@ -118,8 +126,13 @@ async def upload_static(file: UploadFile = File(...), html: Union[str,None] = He
         with open(save_path, "wb") as f:
             f.write(image_bytes)
         new_file = FileBase(filename, filename, datetime.now())
-        session.add(new_file)
-        session.commit()
+        try:
+            session.add(new_file)
+            session.commit()
+        except Exception as e:
+            print("static", e)
+            session.rollback()
+            return Response(status_code=500, content="database error")
     else:
         print("文件已存在.")
     return Response(status_code=200, content=content)
