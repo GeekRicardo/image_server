@@ -2,5 +2,6 @@
 images/
 __pycache__
 venv/
+.venv
 .vscode/
 ssl/

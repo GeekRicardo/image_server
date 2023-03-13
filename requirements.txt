@@ -1,9 +1,11 @@
 fastapi
 uvicorn
 sqlalchemy
-pymysql
 python-multipart
 cryptography
+jinja2
+rich
 
 pylint
 black
+pre-commit
