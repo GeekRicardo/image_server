@@ -117,7 +117,7 @@ async def download(filename: str, d: str = "", db: Session = Depends(get_db)):
     # 如果上传文件记录不存在，则返回404
     if not upload_file:
         logger.error("文件不存在")
-        return Response(status_code=404, content="文件不存在")
+        return Response(status_code=404, content="文件不存在", media_type="text/plain")
 
     # 获取上传文件的本地路径
     file_path = os.path.join(UPLOAD_DIR, upload_file.uuid)
@@ -125,7 +125,7 @@ async def download(filename: str, d: str = "", db: Session = Depends(get_db)):
     # 如果上传文件不存在，则返回404
     if not os.path.exists(file_path):
         logger.error("文件被移动或删除")
-        return Response(status_code=404, content="文件被移动或删除")
+        return Response(status_code=404, content="文件被移动或删除", media_type="text/plain")
 
     # 读取上传文件内容
     with open(file_path, "rb") as f:
@@ -160,6 +160,8 @@ def get_media_type(file_extension: str, direct_download: str = "") -> str:
         media_type = "image/gif"
     return media_type
 
+
+# TODO 消息队列
 
 if __name__ == "__main__":
     uvicorn.run(
