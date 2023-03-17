@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload File</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/dropzone/5.9.2/dropzone.min.css">
+    <!-- TODO iconf -->
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="form-group">
+            <form action="{{ url_for("send_msg") }}" method="post">
+                <label for="msg-input">Message:</label>
+                <textarea class="form-control" id="msg-input" name="message" rows="1"></textarea>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+
+        </div>
+
+        <div style="height: 70vh; overflow-y: auto;">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Message</th>
+                    <th>Created At</th>
+                </tr>
+                </thead>
+                <tbody id="msg-list">
+                {% for msg in msgs %}
+                <tr>
+                    <td><pre>{{ msg.message }}</pre></td>
+                    <td>{{ msg.created_at|datetime_format }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+
+
+    </div>
+
+</body>
+</html>

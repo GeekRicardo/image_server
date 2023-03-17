@@ -1,7 +1,12 @@
 !images/favicon.ico
 images/
+uploads/
+!uploads/favicon.ico
 __pycache__
 venv/
 .venv
 .vscode/
 ssl/
+uploads/
+!uploads/favicon.ico
+file_records.db

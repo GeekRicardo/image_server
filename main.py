@@ -16,15 +16,24 @@ from datetime import datetime
 
 import logging
 import uvicorn
-from fastapi import Depends, FastAPI, File, Request, Response, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi import (
+    Depends,
+    FastAPI,
+    Form,
+    File,
+    Request,
+    Response,
+    UploadFile,
+)
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session
 
 from rich.logging import RichHandler
+
+from model import Base, FileRecord, MsgRecord, SessionLocal, engine, get_db
+from filters import datetime_format, format_size
 
 FORMAT = "%(message)s"
 logging.basicConfig(level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
@@ -34,62 +43,74 @@ logger = logging.getLogger("main")
 app = FastAPI()
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 templates = Jinja2Templates(directory="templates")
-
-Base = declarative_base()
+templates.env.filters.update({"datetime_format": datetime_format, "format_size": format_size})
 
 
 UPLOAD_DIR = "uploads"
-engine = create_engine("sqlite:///file_records.db")
-SessionLocal = sessionmaker(bind=engine)
-
-Base.metadata.create_all(bind=engine)
-
-
-class FileRecord(Base):
-    __tablename__ = "file_records"
-    id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, unique=True, index=True)
-    filename = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@app.on_event("startup")
-def startup():
-    # 创建数据库表
-    Base.metadata.create_all(bind=engine)
 
 
 @app.post("/upload/")
-async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload(uploaded_file: UploadFile = File(...), db: Session = Depends(get_db)):
     # 保存上传的文件
     uuid_filename = str(uuid.uuid4())
     with open(f"{UPLOAD_DIR}/{uuid_filename}", "wb") as f:
-        f_bytes = file.file.read()
+        f_bytes = uploaded_file.file.read()
         f.write(f_bytes)
 
     # 保存上传记录到数据库
-    add_file = FileRecord(filename=file.filename, uuid=uuid_filename, created_at=datetime.utcnow())
+    add_file = FileRecord(
+        filename=uploaded_file.filename,
+        uuid=uuid_filename,
+        created_at=datetime.utcnow(),
+    )
     db.add(add_file)
     db.commit()
     db.refresh(add_file)
+    # return RedirectResponse(url=app.url_path_for("index"), status_code=302)
     return HTMLResponse(
         f"<tr><td><a href='/{add_file.uuid}' target='_blank'>{add_file.uuid}"
-        + f"</a></td><td>{add_file.filename}</td><td>Now</td><td>{file.size}</td></tr>"
+        + f"</a></td><td>{add_file.filename}</td><td>Now</td><td>{uploaded_file.size}</td></tr>"
     )
+
+
+@app.post("/send/")
+async def send_msg(message: str = Form(...), db: Session = Depends(get_db)):
+    new_msg = MsgRecord(message=message, created_at=datetime.utcnow())
+    db.add(new_msg)
+    db.commit()
+    db.refresh(new_msg)
+    return RedirectResponse(url=app.url_path_for("index"), status_code=302)
+
+
+@app.get("/msg")
+async def get_msg(db: Session = Depends(get_db)):
+    msg_list = db.query(MsgRecord).order_by(MsgRecord.created_at.desc()).all()
+    return templates.TemplateResponse("message.html", {"msgs": msg_list})
+
+
+# @app.get("/list")
+# async def file_list(db: Session = Depends(get_db)):
+#     files = db.query(FileRecord).order_by(FileRecord.created_at.desc()).all()
+#     file_list = []
+#     for file in files:
+#         file_path = os.path.join(UPLOAD_DIR, file.uuid)
+#         file_size = os.path.getsize(file_path)
+#         file_list.append(
+#             {
+#                 "name": file.uuid,
+#                 "original_name": file.filename,
+#                 "created_at": file.created_at,
+#                 "size": file_size,
+#             }
+#         )
+#     return templates.TemplateResponse("list.html", {"files": file_list})
 
 
 @app.get("/")
 async def index(request: Request, db: Session = Depends(get_db)):
     # 查询所有文件，按照上传时间排序
     files = db.query(FileRecord).order_by(FileRecord.created_at.desc()).all()
+    msg_list = db.query(MsgRecord).order_by(MsgRecord.created_at.desc()).limit(5).all()
 
     # 构建文件列表数据，包括文件名、原文件名、上传时间、文件大小等信息
     file_list = []
@@ -106,7 +127,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
         )
 
     # 渲染文件列表模板
-    return templates.TemplateResponse("index.html", {"request": request, "files": file_list})
+    return templates.TemplateResponse("index.html", {"request": request, "files": file_list, "msgs": msg_list})
 
 
 @app.get("/{filename}")
@@ -159,6 +180,18 @@ def get_media_type(file_extension: str, direct_download: str = "") -> str:
     elif "gif" == file_extension:
         media_type = "image/gif"
     return media_type
+
+
+# pylint: disable=no-member
+@app.on_event("startup")
+def startup():
+    # 创建数据库表
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    icon = FileRecord(uuid="favicon.ico", filename="favicon.ico", created_at=datetime.utcnow())
+    db.add(icon)
+    db.commit()
+    db.refresh(icon)
 
 
 # TODO 消息队列

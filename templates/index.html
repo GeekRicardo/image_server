@@ -10,30 +10,61 @@
 </head>
 <body>
     <div class="container-fluid">
-        <h1 class="my-4">Upload File</h1>
+        <!-- 文件列表 -->
+        <div style="height: 50vh; overflow-y: auto;">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Created At</th>
+                        <th>Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td><a href="{{ url_for('download', filename=file.name) }}" target="_blank">{{ file.original_name }}</a></td>
+                        <td>{{ file.created_at|datetime_format }}</td>
+                        <td>{{ file.size|format_size }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <!-- 文件上传表单 -->
         <form action="{{ url_for('upload') }}" class="dropzone" id="file-upload-form"></form>
+        <div class="form-group">
+            <form action="{{ url_for("send_msg") }}" method="post">
+                <label for="msg-input">Message:</label>
+                <textarea class="form-control" id="msg-input" name="message" rows="1"></textarea>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
 
-        <!-- 文件列表 -->
-        <table class="table table-striped">
-            <thead>
+        </div>
+
+        <div style="height: 30vh; overflow-y: auto;">
+            <table class="table table-striped">
+                <thead>
                 <tr>
-                    <th>File Name</th>
+                    <th>Message</th>
                     <th>Created At</th>
-                    <th>Size</th>
                 </tr>
-            </thead>
-            <tbody>
-                {% for file in files %}
+                </thead>
+                <tbody id="msg-list">
+                {% for msg in msgs %}
                 <tr>
-                    <td><a href="{{ url_for('download', filename=file.name) }}" target="_blank">{{ file.original_name }}</a></td>
-                    <td>{{ file.created_at }}</td>
-                    <td>{{ file.size }}</td>
+                    <td><pre>{{ msg.message }}</pre></td>
+                    <td>{{ msg.created_at|datetime_format }}</td>
                 </tr>
                 {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+
+
+
+
     </div>
 
     <script src="https://cdn.bootcdn.net/ajax/libs/dropzone/5.9.2/min/dropzone.min.js"></script>
@@ -41,7 +72,7 @@
         Dropzone.autoDiscover = false;
         var myDropzone = new Dropzone("#file-upload-form", {
             paramName: "uploaded_file", // The name that will be used to transfer the file
-            maxFilesize: 10, // MB
+            maxFilesize: 1024, // MB
             addRemoveLinks: true,
             dictDefaultMessage: "Drop files here or click to upload.",
             dictRemoveFile: "Remove",
@@ -68,4 +99,6 @@
                 }
             });
         });
-    </script
+    </script>
+</body>
+</html>
