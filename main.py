@@ -115,7 +115,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
     # 构建文件列表数据，包括文件名、原文件名、上传时间、文件大小等信息
     file_list = []
     for file in files:
-        file_path = os.path.join(UPLOAD_DIR, file.uuid)
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
         file_size = os.path.getsize(file_path)
         file_list.append(
             {
@@ -188,10 +188,11 @@ def startup():
     # 创建数据库表
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    icon = FileRecord(uuid="favicon.ico", filename="favicon.ico", created_at=datetime.utcnow())
-    db.add(icon)
-    db.commit()
-    db.refresh(icon)
+    if not db.query(FileRecord).filter(FileRecord.uuid == "favicon.ico").first():
+        icon = FileRecord(uuid="favicon.ico", filename="favicon.ico", created_at=datetime.utcnow())
+        db.add(icon)
+        db.commit()
+        db.refresh(icon)
 
 
 # TODO 消息队列
