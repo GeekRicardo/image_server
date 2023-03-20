@@ -13,6 +13,7 @@ import os
 import re
 import argparse
 from datetime import datetime
+import shutil
 import uuid
 from rich.progress import track
 
@@ -37,8 +38,8 @@ def register_folder(folder_path):
             db.commit()
             db.refresh(file_record)
             # 拷贝文件
-            cmd = "cp" if os.path.abspath(folder_path) != os.path.abspath(UPLOAD_DIR) else "mv"
-            os.system(f"{cmd} {file_path} {UPLOAD_DIR}/{file_record.uuid}")
+            file_operator = shutil.move if os.path.abspath(folder_path) == os.path.abspath(UPLOAD_DIR) else shutil.copy
+            file_operator(file_path, f"{UPLOAD_DIR}/{file_record.uuid}")
 
 
 def exclude_file(reg: str, file_name: str) -> bool:
