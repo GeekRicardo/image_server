@@ -17,6 +17,7 @@ import uuid
 from rich.progress import track
 
 from model import FileRecord, SessionLocal, Base, engine
+from main import UPLOAD_DIR
 
 
 # pylint: disable=no-member
@@ -35,6 +36,9 @@ def register_folder(folder_path):
             db.add(file_record)
             db.commit()
             db.refresh(file_record)
+            # 拷贝文件
+            cmd = "cp" if os.path.abspath(folder_path) != os.path.abspath(UPLOAD_DIR) else "mv"
+            os.system(f"{cmd} {file_path} {UPLOAD_DIR}/{file_record.uuid}")
 
 
 def exclude_file(reg: str, file_name: str) -> bool:

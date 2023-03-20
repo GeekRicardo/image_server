@@ -115,7 +115,7 @@ async def index(request: Request, db: Session = Depends(get_db)):
     # 构建文件列表数据，包括文件名、原文件名、上传时间、文件大小等信息
     file_list = []
     for file in files:
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        file_path = os.path.join(UPLOAD_DIR, file.uuid)
         file_size = os.path.getsize(file_path)
         file_list.append(
             {
