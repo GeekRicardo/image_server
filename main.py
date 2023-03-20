@@ -156,7 +156,7 @@ async def download(filename: str, d: str = "", db: Session = Depends(get_db)):
     file_extension = upload_file.filename.rsplit(".", 1)[-1].lower()
     media_type = get_media_type(file_extension, d)
     response = Response(content=file_content, media_type=media_type)
-    if d == "1":
+    if media_type == "application/octet-stream":
         # 设置下载时的文件名
         response.headers["Content-Disposition"] = f"attachment; filename={upload_file.filename}"
 
@@ -164,22 +164,22 @@ async def download(filename: str, d: str = "", db: Session = Depends(get_db)):
 
 
 def get_media_type(file_extension: str, direct_download: str = "") -> str:
-    media_type = "application/octet-stream"
+    # pylint: disable=too-many-return-statements
     if direct_download == "1":
-        media_type = "application/octet-stream"
-    elif file_extension in ["jpg", "jpeg"]:
-        media_type = "image/jpeg"
-    elif "png" == file_extension:
-        media_type = "image/png"
-    elif "txt" == file_extension:
-        media_type = "text/plain"
-    elif "pdf" == file_extension:
-        media_type = "application/pdf"
-    elif "json" == file_extension:
-        media_type = "application/json"
-    elif "gif" == file_extension:
-        media_type = "image/gif"
-    return media_type
+        return "application/octet-stream"
+    if file_extension in ["jpg", "jpeg"]:
+        return "image/jpeg"
+    if "png" == file_extension:
+        return "image/png"
+    if "txt" == file_extension:
+        return "text/plain"
+    if "pdf" == file_extension:
+        return "application/pdf"
+    if "json" == file_extension:
+        return "application/json"
+    if "gif" == file_extension:
+        return "image/gif"
+    return "application/octet-stream"
 
 
 # pylint: disable=no-member
